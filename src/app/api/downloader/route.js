@@ -7,20 +7,21 @@ export async function GET(request) {
     const url = searchParams.get('url');
 
     if (!url) {
-      return NextResponse.json({ error: "URL parameter is missing" }, { status: 400 });
+      return NextResponse.json({ error: 'URL parameter is missing' }, { status: 400 });
     }
 
-    const info = await ytdl.getInfo(url);
-    const videoFormats = ytdl.filterFormats(info.formats, 'video');
-    const format = ytdl.chooseFormat(videoFormats, { quality: 'highest' });
-
-    if (!format.url) {
-      return NextResponse.json({ error: "No suitable video format found" }, { status: 404 });
+    const videoId = new URL(url).searchParams.get('v');
+    if (!videoId) {
+      return NextResponse.json({ error: 'Invalid YouTube URL' }, { status: 400 });
     }
 
-    return NextResponse.json({ url: format.url });
+    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const info = await ytdl.getInfo(videoUrl);
+    const format = ytdl.filterFormats(info.formats, 'video')[0]; // Take the first video format
+
+    return NextResponse.json({ downloadUrl: format.url });
   } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json({ error: "Failed to retrieve video information" }, { status: 500 });
+    console.error('Error fetching video info:', error);
+    return NextResponse.json({ error: 'Failed to retrieve video information' }, { status: 500 });
   }
 }
